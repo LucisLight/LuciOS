@@ -513,6 +513,27 @@ function App() {
             </div>
           </section>
 
+          <aside
+            className="desktop-intake-machine"
+            role="img"
+            aria-label="Application intake machine. Hand interface is not connected yet."
+          >
+            <div className="machine-funnel machine-funnel-top" aria-hidden="true"><i /></div>
+            <div className="machine-funnel machine-funnel-side" aria-hidden="true"><i /></div>
+            <div className="machine-body" aria-hidden="true">
+              <span className="machine-rivet machine-rivet-one" />
+              <span className="machine-rivet machine-rivet-two" />
+              <span className="machine-rivet machine-rivet-three" />
+              <span className="machine-rivet machine-rivet-four" />
+              <span className="machine-slot" />
+              <span className="machine-gear machine-gear-large">✦</span>
+              <span className="machine-gear machine-gear-small">✦</span>
+              <strong>APP INTAKE</strong>
+              <small>HAND PORT // STANDBY</small>
+            </div>
+            <div className="machine-feet" aria-hidden="true"><i /><i /></div>
+          </aside>
+
           {desktopWindows.map((desktopWindow) => {
             const folder = desktopFolders.find((candidate) => candidate.id === desktopWindow.folderId)
             return (
