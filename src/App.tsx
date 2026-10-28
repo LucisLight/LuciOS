@@ -77,7 +77,7 @@ const projects: Project[] = [
       'Designed motion as progressive enhancement with reduced-motion and mobile fallbacks.',
     ],
     outcome:
-      'The submission edition establishes a responsive, accessible portfolio and a reusable design system with an interactive mechanical startup sequence. Future releases can connect the pixel-shadow hand, terminal valve, and richer project media without rewriting the professional content.',
+      'The submission edition establishes a responsive, accessible portfolio and a reusable design system with an interactive startup sequence and prototype desktop shell. Future releases can connect the folders, applications, pixel-shadow hand, terminal valve, and richer project media without rewriting the professional content.',
     technologies: ['React', 'TypeScript', 'Vite', 'CSS', 'Accessible HTML'],
     evidenceLabel: 'You are viewing the working project',
   },
@@ -126,12 +126,42 @@ function createBootStalls(): BootStall[] {
   ]
 }
 
+const desktopFolderPool = [
+  'Brass Notes',
+  'Ghost Files',
+  'Packet Garden',
+  'Night Shift',
+  'Loose Screws',
+  'Pink Archive',
+  'Signal Maps',
+  'Velvet Engine',
+  'Field Kit',
+  'Unsorted Stars',
+]
+
+const desktopApps = [
+  { name: 'Arc Mail', mark: 'AM' },
+  { name: 'Clockwork', mark: 'CW' },
+  { name: 'Signal', mark: 'SG' },
+  { name: 'Vault', mark: 'VT' },
+  { name: 'Muse', mark: 'MS' },
+]
+
+function createDesktopFolders() {
+  return [...desktopFolderPool]
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 5)
+}
+
 function App() {
   const resumeUrl = `${import.meta.env.BASE_URL}Luci-Crow-Technology-Resume.pdf`
   const powerButtonRef = useRef<HTMLButtonElement>(null)
   const bootOverlayRef = useRef<HTMLElement>(null)
+  const desktopRef = useRef<HTMLElement>(null)
   const [isBooting, setIsBooting] = useState(false)
+  const [isDesktopOpen, setIsDesktopOpen] = useState(false)
   const [bootProgress, setBootProgress] = useState(0)
+  const [desktopFolders, setDesktopFolders] = useState(createDesktopFolders)
   const [colorVisionMode, setColorVisionMode] = useState<ColorVisionMode>(() => {
     const savedMode = window.localStorage.getItem('lucios-color-vision')
     return colorVisionOptions.some((option) => option.value === savedMode)
@@ -168,8 +198,9 @@ function App() {
 
     const completionTimer = window.setTimeout(() => {
       setBootProgress(100)
+      setIsDesktopOpen(true)
       setIsBooting(false)
-      window.requestAnimationFrame(() => powerButtonRef.current?.focus())
+      window.requestAnimationFrame(() => desktopRef.current?.focus({ preventScroll: true }))
     }, BOOT_DURATION)
 
     return () => {
@@ -186,6 +217,98 @@ function App() {
       : bootProgress < 76
         ? 'Charging interface rails'
         : 'Opening LuciOS'
+
+  if (isDesktopOpen) {
+    return (
+      <div className="lucios-desktop">
+        <a className="skip-link" href="#desktop-main">Skip to LuciOS desktop</a>
+
+        <header className="desktop-header">
+          <div className="desktop-brand">
+            <span className="desktop-brand-mark" aria-hidden="true">LC</span>
+            <span><strong>LuciOS</strong><small>Desktop prototype // session 01</small></span>
+          </div>
+          <div className="desktop-header-status" aria-label="LuciOS prototype status">
+            <span><i aria-hidden="true" /> Core online</span>
+            <button
+              type="button"
+              className="desktop-exit"
+              onClick={() => {
+                setIsDesktopOpen(false)
+                window.requestAnimationFrame(() => powerButtonRef.current?.focus())
+              }}
+            >
+              <span className="power-glyph" aria-hidden="true" />
+              Portfolio
+            </button>
+          </div>
+        </header>
+
+        <nav className="desktop-rail" aria-label="Prototype applications">
+          <span className="desktop-rail-label">App rail</span>
+          <div className="desktop-rail-track" aria-hidden="true" />
+          <div className="desktop-apps">
+            {desktopApps.map((app) => (
+              <button type="button" className="desktop-app" disabled key={app.name} title="Prototype app — not connected yet">
+                <span aria-hidden="true">{app.mark}</span>
+                <strong>{app.name}</strong>
+                <small>offline</small>
+              </button>
+            ))}
+          </div>
+        </nav>
+
+        <main className="desktop-workspace" id="desktop-main" tabIndex={-1} ref={desktopRef}>
+          <section className="desktop-folders" aria-labelledby="folders-title">
+            <div className="desktop-section-label">
+              <p>Local desktop</p>
+              <h1 id="folders-title">Choose a folder.<br /><em>Eventually.</em></h1>
+              <span>Placeholder objects reshuffle every time LuciOS starts.</span>
+            </div>
+            <div className="folder-grid">
+              {desktopFolders.map((folder, index) => (
+                <button
+                  className="desktop-folder"
+                  type="button"
+                  disabled
+                  aria-label={`${folder} folder placeholder`}
+                  key={folder}
+                >
+                  <span className="folder-shape" aria-hidden="true"><i>{String(index + 1).padStart(2, '0')}</i></span>
+                  <strong>{folder}</strong>
+                  <small>sealed</small>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="desktop-command" aria-labelledby="command-title">
+            <div className="command-titlebar">
+              <span aria-hidden="true">■</span>
+              <strong id="command-title">Command interface</strong>
+              <small>read-only</small>
+            </div>
+            <div className="command-screen" aria-label="Command interface preview. Input is disabled.">
+              <p><span>LuciOS kernel</span> prototype channel</p>
+              <p>mounting /desktop ................ <b>ok</b></p>
+              <p>hand_interface ................... <b>pending</b></p>
+              <p>command_input .................... <b>locked</b></p>
+              <div className="command-seal">
+                <strong>INPUT LOCKED</strong>
+                <span>Command module not connected yet.</span>
+              </div>
+              <p className="command-prompt" aria-hidden="true">luci@lucios:~$ <i /></p>
+            </div>
+          </section>
+        </main>
+
+        <footer className="desktop-footer">
+          <span>LUCIOS // EXPERIMENTAL DESKTOP</span>
+          <span>Folders and applications are visual placeholders.</span>
+        </footer>
+      </div>
+    )
+  }
 
   return (
     <div className="site-shell" id="top" aria-busy={isBooting}>
@@ -239,6 +362,7 @@ function App() {
             type="button"
             onClick={() => {
               setBootProgress(0)
+              setDesktopFolders(createDesktopFolders())
               setIsBooting(true)
             }}
             disabled={isBooting}
