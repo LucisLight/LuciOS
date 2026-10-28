@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import './App.css'
 
 type ColorVisionMode = 'standard' | 'protanopia' | 'deuteranopia' | 'tritanopia' | 'achromatopsia'
@@ -77,7 +77,7 @@ const projects: Project[] = [
       'Designed motion as progressive enhancement with reduced-motion and mobile fallbacks.',
     ],
     outcome:
-      'The submission edition establishes a responsive, accessible portfolio and a reusable design system with an interactive startup sequence and prototype desktop shell. Future releases can connect the folders, applications, pixel-shadow hand, terminal valve, and richer project media without rewriting the professional content.',
+      'The submission edition establishes a responsive, accessible portfolio and a reusable design system with an interactive startup sequence, prototype desktop shell, and shared draggable-window system. Future releases can connect the applications, pixel-shadow hand, terminal valve, and richer project media without rewriting the professional content.',
     technologies: ['React', 'TypeScript', 'Vite', 'CSS', 'Accessible HTML'],
     evidenceLabel: 'You are viewing the working project',
   },
@@ -140,17 +140,151 @@ const desktopFolderPool = [
 ]
 
 const desktopApps = [
-  { name: 'Arc Mail', mark: 'AM' },
-  { name: 'Clockwork', mark: 'CW' },
-  { name: 'Signal', mark: 'SG' },
-  { name: 'Vault', mark: 'VT' },
-  { name: 'Muse', mark: 'MS' },
+  { id: 'arc-mail', name: 'Arc Mail', mark: 'AM' },
+  { id: 'clockwork', name: 'Clockwork', mark: 'CW' },
+  { id: 'signal', name: 'Signal', mark: 'SG' },
+  { id: 'vault', name: 'Vault', mark: 'VT' },
+  { id: 'muse', name: 'Muse', mark: 'MS' },
+  { id: 'shell', name: 'Shell', mark: '>_' },
 ]
 
+const desktopFolderSlots = [
+  { x: 7, y: 9 },
+  { x: 29, y: 18 },
+  { x: 57, y: 8 },
+  { x: 78, y: 30 },
+  { x: 12, y: 61 },
+  { x: 42, y: 57 },
+  { x: 69, y: 68 },
+]
+
+type DesktopFolder = {
+  id: string
+  label: string
+  x: number
+  y: number
+  rotation: number
+}
+
 function createDesktopFolders() {
-  return [...desktopFolderPool]
-    .sort(() => Math.random() - 0.5)
-    .slice(0, 5)
+  const labels = [...desktopFolderPool].sort(() => Math.random() - 0.5).slice(0, 5)
+  const slots = [...desktopFolderSlots].sort(() => Math.random() - 0.5).slice(0, 5)
+
+  return labels.map((label, index): DesktopFolder => ({
+    id: `${label}-${index}`,
+    label,
+    x: slots[index].x + (Math.random() * 4 - 2),
+    y: slots[index].y + (Math.random() * 4 - 2),
+    rotation: Math.random() * 5 - 2.5,
+  }))
+}
+
+type DesktopWindowKind = 'shell' | 'folder' | 'document'
+
+type DesktopWindowState = {
+  id: string
+  kind: DesktopWindowKind
+  title: string
+  x: number
+  y: number
+  z: number
+  folderId?: string
+}
+
+type DraggableWindowProps = {
+  windowState: DesktopWindowState
+  children: ReactNode
+  onClose: (id: string) => void
+  onFocus: (id: string) => void
+  onMove: (id: string, x: number, y: number) => void
+}
+
+function DraggableWindow({ windowState, children, onClose, onFocus, onMove }: DraggableWindowProps) {
+  const frameRef = useRef<HTMLElement>(null)
+  const dragRef = useRef<{ pointerId: number; offsetX: number; offsetY: number } | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
+
+  const moveWithinViewport = (x: number, y: number) => {
+    const width = frameRef.current?.offsetWidth ?? 420
+    const height = frameRef.current?.offsetHeight ?? 320
+    onMove(
+      windowState.id,
+      Math.min(Math.max(8, x), Math.max(8, window.innerWidth - width - 8)),
+      Math.min(Math.max(8, y), Math.max(8, window.innerHeight - height - 8)),
+    )
+  }
+
+  const beginDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const bounds = frameRef.current?.getBoundingClientRect()
+    if (!bounds) return
+    dragRef.current = {
+      pointerId: event.pointerId,
+      offsetX: event.clientX - bounds.left,
+      offsetY: event.clientY - bounds.top,
+    }
+    event.currentTarget.setPointerCapture(event.pointerId)
+    setIsDragging(true)
+  }
+
+  const drag = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const activeDrag = dragRef.current
+    if (!activeDrag || activeDrag.pointerId !== event.pointerId) return
+    moveWithinViewport(event.clientX - activeDrag.offsetX, event.clientY - activeDrag.offsetY)
+  }
+
+  const endDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (dragRef.current?.pointerId !== event.pointerId) return
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
+    dragRef.current = null
+    setIsDragging(false)
+  }
+
+  return (
+    <section
+      className={`desktop-window desktop-window-${windowState.kind}${isDragging ? ' is-dragging' : ''}`}
+      data-window-id={windowState.id}
+      ref={frameRef}
+      style={{ left: windowState.x, top: windowState.y, zIndex: windowState.z }}
+      aria-labelledby={`${windowState.id}-title`}
+      onPointerDown={() => onFocus(windowState.id)}
+    >
+      <div
+        className="window-titlebar"
+        tabIndex={0}
+        onPointerDown={beginDrag}
+        onPointerMove={drag}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+        onKeyDown={(event) => {
+          const distance = event.shiftKey ? 40 : 12
+          if (event.key === 'ArrowLeft') moveWithinViewport(windowState.x - distance, windowState.y)
+          else if (event.key === 'ArrowRight') moveWithinViewport(windowState.x + distance, windowState.y)
+          else if (event.key === 'ArrowUp') moveWithinViewport(windowState.x, windowState.y - distance)
+          else if (event.key === 'ArrowDown') moveWithinViewport(windowState.x, windowState.y + distance)
+          else if (event.key === 'Escape') onClose(windowState.id)
+          else return
+          event.preventDefault()
+        }}
+        aria-label={`${windowState.title} window. Drag to move, use arrow keys to reposition, or press Escape to close.`}
+      >
+        <span aria-hidden="true">{windowState.kind === 'folder' ? '▰' : windowState.kind === 'document' ? '▤' : '■'}</span>
+        <strong id={`${windowState.id}-title`}>{windowState.title}</strong>
+        <small>{windowState.kind === 'shell' ? 'read-only' : windowState.kind}</small>
+        <button
+          className="window-close"
+          type="button"
+          aria-label={`Close ${windowState.title}`}
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={() => onClose(windowState.id)}
+        >
+          ×
+        </button>
+      </div>
+      {children}
+    </section>
+  )
 }
 
 function App() {
@@ -158,8 +292,11 @@ function App() {
   const powerButtonRef = useRef<HTMLButtonElement>(null)
   const bootOverlayRef = useRef<HTMLElement>(null)
   const desktopRef = useRef<HTMLElement>(null)
+  const shellAppRef = useRef<HTMLButtonElement>(null)
+  const windowZRef = useRef(20)
   const [isBooting, setIsBooting] = useState(false)
   const [isDesktopOpen, setIsDesktopOpen] = useState(false)
+  const [desktopWindows, setDesktopWindows] = useState<DesktopWindowState[]>([])
   const [bootProgress, setBootProgress] = useState(0)
   const [desktopFolders, setDesktopFolders] = useState(createDesktopFolders)
   const [colorVisionMode, setColorVisionMode] = useState<ColorVisionMode>(() => {
@@ -218,6 +355,82 @@ function App() {
         ? 'Charging interface rails'
         : 'Opening LuciOS'
 
+  const focusDesktopWindow = (id: string) => {
+    const z = ++windowZRef.current
+    setDesktopWindows((windows) => windows.map((desktopWindow) => (
+      desktopWindow.id === id ? { ...desktopWindow, z } : desktopWindow
+    )))
+  }
+
+  const moveDesktopWindow = (id: string, x: number, y: number) => {
+    setDesktopWindows((windows) => windows.map((desktopWindow) => (
+      desktopWindow.id === id ? { ...desktopWindow, x, y } : desktopWindow
+    )))
+  }
+
+  const closeDesktopWindow = (id: string) => {
+    setDesktopWindows((windows) => windows.filter((desktopWindow) => desktopWindow.id !== id))
+    if (id === 'shell') {
+      window.requestAnimationFrame(() => shellAppRef.current?.focus({ preventScroll: true }))
+    }
+  }
+
+  const openDesktopWindow = (windowState: Omit<DesktopWindowState, 'z'>) => {
+    const z = ++windowZRef.current
+    setDesktopWindows((windows) => {
+      const existing = windows.find((desktopWindow) => desktopWindow.id === windowState.id)
+      if (existing) {
+        return windows.map((desktopWindow) => (
+          desktopWindow.id === windowState.id ? { ...desktopWindow, z } : desktopWindow
+        ))
+      }
+      return [...windows, { ...windowState, z }]
+    })
+    window.requestAnimationFrame(() => {
+      const titlebar = document.querySelector<HTMLElement>(`[data-window-id="${windowState.id}"] .window-titlebar`)
+      titlebar?.focus({ preventScroll: true })
+    })
+  }
+
+  const centeredWindowPosition = (width: number, height: number, cascade = 0) => ({
+    x: Math.max(12, (window.innerWidth - width) / 2 + cascade),
+    y: Math.max(12, (window.innerHeight - height) / 2 + cascade),
+  })
+
+  const openShell = () => {
+    const size = Math.min(500, window.innerWidth - 32, window.innerHeight - 48)
+    openDesktopWindow({
+      id: 'shell',
+      kind: 'shell',
+      title: 'Command interface',
+      ...centeredWindowPosition(size, size),
+    })
+  }
+
+  const openFolder = (folder: DesktopFolder) => {
+    const width = Math.min(370, window.innerWidth - 32)
+    const height = Math.min(280, window.innerHeight - 48)
+    openDesktopWindow({
+      id: `folder-${folder.id}`,
+      kind: 'folder',
+      title: folder.label,
+      folderId: folder.id,
+      ...centeredWindowPosition(width, height, 24),
+    })
+  }
+
+  const openDocument = (folder: DesktopFolder) => {
+    const width = Math.min(470, window.innerWidth - 32)
+    const height = Math.min(360, window.innerHeight - 48)
+    openDesktopWindow({
+      id: `document-${folder.id}`,
+      kind: 'document',
+      title: `${folder.label}.txt`,
+      folderId: folder.id,
+      ...centeredWindowPosition(width, height, 48),
+    })
+  }
+
   if (isDesktopOpen) {
     return (
       <div className="lucios-desktop">
@@ -234,6 +447,7 @@ function App() {
               type="button"
               className="desktop-exit"
               onClick={() => {
+                setDesktopWindows([])
                 setIsDesktopOpen(false)
                 window.requestAnimationFrame(() => powerButtonRef.current?.focus())
               }}
@@ -248,63 +462,109 @@ function App() {
           <span className="desktop-rail-label">App rail</span>
           <div className="desktop-rail-track" aria-hidden="true" />
           <div className="desktop-apps">
-            {desktopApps.map((app) => (
-              <button type="button" className="desktop-app" disabled key={app.name} title="Prototype app — not connected yet">
+            {desktopApps.map((app) => {
+              const isShell = app.id === 'shell'
+              return (
+              <button
+                type="button"
+                className={`desktop-app${isShell ? ' desktop-app-ready' : ''}`}
+                disabled={!isShell}
+                onClick={isShell ? openShell : undefined}
+                ref={isShell ? shellAppRef : undefined}
+                key={app.id}
+                title={isShell ? 'Open the locked command interface' : 'Prototype app — not connected yet'}
+              >
                 <span aria-hidden="true">{app.mark}</span>
                 <strong>{app.name}</strong>
-                <small>offline</small>
+                <small>{isShell ? 'ready' : 'offline'}</small>
               </button>
-            ))}
+              )
+            })}
           </div>
         </nav>
 
-        <main className="desktop-workspace" id="desktop-main" tabIndex={-1} ref={desktopRef}>
-          <section className="desktop-folders" aria-labelledby="folders-title">
-            <div className="desktop-section-label">
-              <p>Local desktop</p>
-              <h1 id="folders-title">Choose a folder.<br /><em>Eventually.</em></h1>
-              <span>Placeholder objects reshuffle every time LuciOS starts.</span>
-            </div>
-            <div className="folder-grid">
+        <main
+          className="desktop-workspace"
+          id="desktop-main"
+          tabIndex={-1}
+          ref={desktopRef}
+          aria-label="LuciOS desktop workspace"
+        >
+          <section className="desktop-folders" aria-label="Desktop folders">
+            <div className="folder-scatter">
               {desktopFolders.map((folder, index) => (
                 <button
                   className="desktop-folder"
                   type="button"
-                  disabled
-                  aria-label={`${folder} folder placeholder`}
-                  key={folder}
+                  onClick={() => openFolder(folder)}
+                  aria-label={`Open ${folder.label} folder`}
+                  key={folder.id}
+                  style={{
+                    left: `${folder.x}%`,
+                    top: `${folder.y}%`,
+                    transform: `rotate(${folder.rotation}deg)`,
+                  }}
                 >
                   <span className="folder-shape" aria-hidden="true"><i>{String(index + 1).padStart(2, '0')}</i></span>
-                  <strong>{folder}</strong>
-                  <small>sealed</small>
+                  <strong>{folder.label}</strong>
+                  <small>folder</small>
                 </button>
               ))}
             </div>
           </section>
 
-          <section className="desktop-command" aria-labelledby="command-title">
-            <div className="command-titlebar">
-              <span aria-hidden="true">■</span>
-              <strong id="command-title">Command interface</strong>
-              <small>read-only</small>
-            </div>
-            <div className="command-screen" aria-label="Command interface preview. Input is disabled.">
-              <p><span>LuciOS kernel</span> prototype channel</p>
-              <p>mounting /desktop ................ <b>ok</b></p>
-              <p>hand_interface ................... <b>pending</b></p>
-              <p>command_input .................... <b>locked</b></p>
-              <div className="command-seal">
-                <strong>INPUT LOCKED</strong>
-                <span>Command module not connected yet.</span>
-              </div>
-              <p className="command-prompt" aria-hidden="true">luci@lucios:~$ <i /></p>
-            </div>
-          </section>
+          {desktopWindows.map((desktopWindow) => {
+            const folder = desktopFolders.find((candidate) => candidate.id === desktopWindow.folderId)
+            return (
+              <DraggableWindow
+                windowState={desktopWindow}
+                onClose={closeDesktopWindow}
+                onFocus={focusDesktopWindow}
+                onMove={moveDesktopWindow}
+                key={desktopWindow.id}
+              >
+                {desktopWindow.kind === 'shell' && (
+                  <div className="command-screen" aria-label="Command interface preview. Input is disabled.">
+                    <p><span>LuciOS kernel</span> prototype channel</p>
+                    <p>mounting /desktop ................ <b>ok</b></p>
+                    <p>hand_interface ................... <b>pending</b></p>
+                    <p>command_input .................... <b>locked</b></p>
+                    <div className="command-seal">
+                      <strong>INPUT LOCKED</strong>
+                      <span>Command module not connected yet.</span>
+                    </div>
+                    <p className="command-prompt" aria-hidden="true">luci@lucios:~$ <i /></p>
+                  </div>
+                )}
+
+                {desktopWindow.kind === 'folder' && folder && (
+                  <div className="folder-window-body">
+                    <p className="window-path">luci://desktop/{folder.label.toLowerCase().replaceAll(' ', '-')}</p>
+                    <button className="text-document-icon" type="button" onClick={() => openDocument(folder)}>
+                      <span aria-hidden="true">TXT</span>
+                      <strong>manifest.txt</strong>
+                      <small>Text document</small>
+                    </button>
+                  </div>
+                )}
+
+                {desktopWindow.kind === 'document' && folder && (
+                  <article className="document-window-body">
+                    <p className="document-kicker">LuciOS text viewer // read only</p>
+                    <h2>{folder.label}</h2>
+                    <p>This document belongs to the <strong>{folder.label}</strong> folder.</p>
+                    <p>The folder and file system are currently a visual prototype. Nothing here writes to disk, collects visitor input, or connects to the command interface.</p>
+                    <p className="document-note">Future content can replace this note without changing the reusable window system.</p>
+                  </article>
+                )}
+              </DraggableWindow>
+            )
+          })}
         </main>
 
         <footer className="desktop-footer">
           <span>LUCIOS // EXPERIMENTAL DESKTOP</span>
-          <span>Folders and applications are visual placeholders.</span>
+          <span>Folders contain prototype files; unlit applications remain placeholders.</span>
         </footer>
       </div>
     )
@@ -363,6 +623,7 @@ function App() {
             onClick={() => {
               setBootProgress(0)
               setDesktopFolders(createDesktopFolders())
+              setDesktopWindows([])
               setIsBooting(true)
             }}
             disabled={isBooting}
