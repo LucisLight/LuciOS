@@ -1,0 +1,31 @@
+.window-resize-handle {
+  position: absolute;
+  z-index: 8;
+  display: block;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  touch-action: none;
+}
+
+.window-resize-east { top: 3rem; right: -.55rem; bottom: .6rem; width: .85rem; cursor: ew-resize; }
+.window-resize-south { right: .6rem; bottom: -.55rem; left: 0; height: .85rem; cursor: ns-resize; }
+.window-resize-corner {
+  right: -.55rem;
+  bottom: -.55rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg,transparent 45%,var(--bronze) 46% 56%,transparent 57% 66%,var(--pink-deep) 67% 77%,transparent 78%);
+}
+
+.window-resize-corner:focus-visible { outline: 2px solid var(--mist); outline-offset: 2px; }
+
+.desktop-window.is-resizing { user-select: none; box-shadow: 18px 18px 0 #040405,0 0 3rem rgba(var(--accent-rgb),.18); }
+
+@media (pointer: coarse) {
+  .window-resize-east { right: -.7rem; width: 1.2rem; }
+  .window-resize-south { bottom: -.7rem; height: 1.2rem; }
+  .window-resize-corner { right: -.7rem; bottom: -.7rem; width: 1.6rem; height: 1.6rem; }
+}

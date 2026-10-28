@@ -99,6 +99,12 @@ function App() {
     )))
   }
 
+  const resizeDesktopWindow = (id: string, x: number, y: number, width: number, height: number) => {
+    setDesktopWindows((windows) => windows.map((desktopWindow) => (
+      desktopWindow.id === id ? { ...desktopWindow, x, y, width, height } : desktopWindow
+    )))
+  }
+
   const closeDesktopWindow = (id: string) => {
     setDesktopWindows((windows) => windows.filter((desktopWindow) => desktopWindow.id !== id))
     const launcherId = id === 'shell' ? 'shell' : id.startsWith('app-') ? id.slice(4) : null
@@ -144,6 +150,8 @@ function App() {
       id: 'shell',
       kind: 'shell',
       title: 'Command interface',
+      width,
+      height,
       ...ejectedWindowPosition(width, height, origin),
     })
   }
@@ -162,6 +170,8 @@ function App() {
       kind: 'app',
       title: app.name,
       appId: app.id,
+      width,
+      height,
       ...ejectedWindowPosition(width, height, origin),
     })
   }
@@ -282,6 +292,8 @@ function App() {
       kind: 'folder',
       title: folder.label,
       folderId: folder.id,
+      width,
+      height,
       ...centeredWindowPosition(width, height, 24),
     })
   }
@@ -300,6 +312,8 @@ function App() {
       kind: 'document',
       title: `${folder.label}.txt`,
       folderId: folder.id,
+      width,
+      height,
       ...centeredWindowPosition(width, height, 48),
     })
   }
@@ -336,7 +350,7 @@ function App() {
     windowEjection={windowEjection} machineProgress={machineProgress} resumeUrl={resumeUrl}
     onExit={exitDesktop} onLaunchApp={launchDesktopApp} onOpenFolder={openFolder}
     onMoveFolder={moveDesktopFolder} onOpenDocument={openDocument} onCloseWindow={closeDesktopWindow}
-    onFocusWindow={focusDesktopWindow} onMoveWindow={moveDesktopWindow}
+    onFocusWindow={focusDesktopWindow} onMoveWindow={moveDesktopWindow} onResizeWindow={resizeDesktopWindow}
     evilPhase={evilBoot.phase} evilProgress={evilBoot.progress} onEvilLuci={evilBoot.start}
     credits={credits} onCreditDelta={adjustCredits}
   />

@@ -77,6 +77,8 @@ export type DesktopWindowState = {
   title: string
   x: number
   y: number
+  width: number
+  height: number
   z: number
   folderId?: string
   appId?: string

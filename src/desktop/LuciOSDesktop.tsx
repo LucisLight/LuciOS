@@ -27,6 +27,7 @@ type LuciOSDesktopProps = {
   onCloseWindow: (id: string) => void
   onFocusWindow: (id: string) => void
   onMoveWindow: (id: string, x: number, y: number) => void
+  onResizeWindow: (id: string, x: number, y: number, width: number, height: number) => void
   evilPhase: EvilBootPhase
   evilProgress: number
   onEvilLuci: () => void
@@ -37,7 +38,7 @@ type LuciOSDesktopProps = {
 export default function LuciOSDesktop({
   desktopRef, machineFunnelRef, machineOutputRef, desktopFolders, desktopWindows,
   appTransfer, windowEjection, machineProgress, resumeUrl, onExit, onLaunchApp,
-  onOpenFolder, onMoveFolder, onOpenDocument, onCloseWindow, onFocusWindow, onMoveWindow,
+  onOpenFolder, onMoveFolder, onOpenDocument, onCloseWindow, onFocusWindow, onMoveWindow, onResizeWindow,
   evilPhase, evilProgress, onEvilLuci,
   credits, onCreditDelta,
 }: LuciOSDesktopProps) {
@@ -151,6 +152,7 @@ export default function LuciOSDesktop({
                   onClose={onCloseWindow}
                   onFocus={onFocusWindow}
                   onMove={onMoveWindow}
+                  onResize={onResizeWindow}
                   key={desktopWindow.id}
                 >
                   {desktopWindow.kind === 'shell' && (

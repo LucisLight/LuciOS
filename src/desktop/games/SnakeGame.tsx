@@ -15,7 +15,7 @@ export default function SnakeGame({ onCreditDelta }: { onCreditDelta: (delta: nu
   const [food, setFood] = useState(() => randomFood(START))
   const [running, setRunning] = useState(false)
   const [score, setScore] = useState(0)
-  const [message, setMessage] = useState('Press Start, then use arrow keys or WASD.')
+  const [message, setMessage] = useState('Press an arrow key or WASD to begin.')
   const direction = useRef<Point>({ x: 1, y: 0 })
   const nextDirection = useRef<Point>({ x: 1, y: 0 })
 
@@ -62,7 +62,11 @@ export default function SnakeGame({ onCreditDelta }: { onCreditDelta: (delta: nu
       onKeyDown={(event) => {
         const controls: Record<string, Point> = { ArrowUp: { x: 0, y: -1 }, w: { x: 0, y: -1 }, ArrowDown: { x: 0, y: 1 }, s: { x: 0, y: 1 }, ArrowLeft: { x: -1, y: 0 }, a: { x: -1, y: 0 }, ArrowRight: { x: 1, y: 0 }, d: { x: 1, y: 0 } }
         const move = controls[event.key]
-        if (move) { event.preventDefault(); steer(move.x, move.y) }
+        if (move) {
+          event.preventDefault()
+          steer(move.x, move.y)
+          if (!running) { setRunning(true); setMessage('Signal moving.') }
+        }
       }}>
       <header><div><p>LUCIOS ARCADE // SIGNAL SERPENT</p><h2>Snake</h2></div><strong>Score {score}</strong></header>
       <div className="snake-board" role="img" aria-label={`Snake board. Score ${score}.`}>
