@@ -1,0 +1,292 @@
+import type { RefObject } from 'react'
+import { certifications, colorVisionOptions, projects, skillGroups, type ColorVisionMode } from '../data/portfolio'
+
+type PortfolioPageProps = {
+  resumeUrl: string
+  isBooting: boolean
+  bootProgress: number
+  bootStatus: string
+  bootOverlayRef: RefObject<HTMLElement | null>
+  powerButtonRef: RefObject<HTMLButtonElement | null>
+  colorVisionMode: ColorVisionMode
+  onColorVisionModeChange: (mode: ColorVisionMode) => void
+  onStart: () => void
+}
+
+export default function PortfolioPage({
+  resumeUrl, isBooting, bootProgress, bootStatus, bootOverlayRef, powerButtonRef,
+  colorVisionMode, onColorVisionModeChange, onStart,
+}: PortfolioPageProps) {
+    return (
+      <div className="site-shell" id="top" aria-busy={isBooting}>
+        <a className="skip-link" href="#main-content">Skip to portfolio content</a>
+  
+        {isBooting && (
+          <section
+            className="boot-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="boot-title"
+            aria-describedby="boot-status"
+            tabIndex={-1}
+            ref={bootOverlayRef}
+          >
+            <div className="boot-console">
+              <p className="boot-kicker">System start // portfolio interface</p>
+              <h2 id="boot-title">LuciOS</h2>
+              <div className="boot-drive" aria-hidden="true">
+                <div className="boot-progress-fill" style={{ width: `${bootProgress}%` }} />
+                <span className="boot-gear boot-gear-one">✦</span>
+                <span className="boot-gear boot-gear-two">✦</span>
+                <span className="boot-gear boot-gear-three">✦</span>
+              </div>
+              <div
+                className="boot-progress"
+                role="progressbar"
+                aria-label="LuciOS startup progress"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(bootProgress)}
+              >
+                <span>{String(Math.round(bootProgress)).padStart(2, '0')}%</span>
+                <span id="boot-status" aria-live="polite">{bootStatus}</span>
+              </div>
+            </div>
+          </section>
+        )}
+  
+        <header className="topbar" aria-label="LuciOS header">
+          <a className="wordmark" href="#top" aria-label="LuciOS home">
+            <span className="wordmark-mark" aria-hidden="true">LC</span>
+            <span>
+              <strong>LuciOS</strong>
+              <small>Professional portfolio / v1.1</small>
+            </span>
+          </a>
+          <div className="topbar-tools">
+            <button
+              className="power-button"
+              type="button"
+              onClick={onStart}
+              disabled={isBooting}
+              aria-label="Start the LuciOS interface"
+              ref={powerButtonRef}
+            >
+              <span className="power-glyph" aria-hidden="true" />
+              <span>Start LuciOS</span>
+            </button>
+            <label className="vision-setting" htmlFor="color-vision-mode">
+              <span>Color vision</span>
+              <select
+                id="color-vision-mode"
+                value={colorVisionMode}
+                onChange={(event) => onColorVisionModeChange(event.target.value as ColorVisionMode)}
+              >
+                {colorVisionOptions.map((option) => (
+                  <option value={option.value} key={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+            <div className="system-status" aria-label="System status: portfolio online">
+              <span className="status-light" aria-hidden="true" /> portfolio online
+            </div>
+          </div>
+        </header>
+  
+        <nav className="app-rail" aria-label="Portfolio sections">
+          <div className="rail-track" aria-hidden="true" />
+          {[
+            ['about', 'About'],
+            ['projects', 'Projects'],
+            ['skills', 'Skills'],
+            ['resume', 'Resume'],
+            ['contact', 'Contact'],
+            ['reflection', 'Reflection'],
+          ].map(([target, label], index) => (
+            <a className="rail-tag" href={`#${target}`} key={target}>
+              <span aria-hidden="true">0{index + 1}</span>
+              {label}
+            </a>
+          ))}
+        </nav>
+  
+        <main id="main-content">
+          <section className="hero-section" aria-labelledby="hero-title">
+            <div className="hero-copy">
+              <p className="eyebrow">Technology portfolio of Luci Crow</p>
+              <h1 id="hero-title">The portfolio<br /><em>is the interface.</em></h1>
+              <p className="hero-lede">
+                Explore seven years of hands-on IT experience, security-focused training, and software projects built to solve practical problems.
+              </p>
+              <div className="hero-actions">
+                <a className="button primary" href="#projects">Explore projects</a>
+                <a className="button secondary" href={resumeUrl} target="_blank" rel="noreferrer">Open resume</a>
+              </div>
+            </div>
+  
+            <div className="hero-machine" aria-hidden="true">
+              <div className="machine-pipe pipe-top" />
+              <div className="machine-screen">
+                <span className="screen-label">LUCILIGHT // PROFILE</span>
+                <strong>IT + SOFTWARE<br />+ SECURITY</strong>
+                <span className="cursor-block" />
+              </div>
+              <div className="machine-pipe pipe-right" />
+              <div className="gear gear-one">✦</div>
+              <div className="gear gear-two">✦</div>
+            </div>
+          </section>
+  
+          <section className="quick-proof" aria-label="Professional highlights">
+            <div><strong>7+</strong><span>years in information technology</span></div>
+            <div><strong>5</strong><span>current CompTIA certifications</span></div>
+            <div><strong>3</strong><span>featured technical projects</span></div>
+            <div><strong>AA</strong><span>accessibility-minded design target</span></div>
+          </section>
+  
+          <section className="content-section about-grid" id="about" aria-labelledby="about-title">
+            <div className="section-heading">
+              <p className="eyebrow">01 / Professional introduction</p>
+              <h2 id="about-title">About Luci</h2>
+            </div>
+            <div className="panel prose-panel">
+              <p>
+                I’m Luci Crow, a Computer Science student at Skagit Valley College with professional experience spanning end-user support, networking, system deployment, hardware repair, Active Directory, and technical operations. Over seven years in information technology, I have worked as a technician, network specialist, engineering specialist, help-desk technician, domain administrator, and senior support technician. Those roles taught me how to diagnose problems methodically, communicate clearly with users, and carry an issue through to a reliable resolution.
+              </p>
+              <p>
+                My current interests connect cybersecurity, systems administration, networking, and full-stack software development. I enjoy building tools that make technical work easier to understand and manage, especially when practical infrastructure knowledge can improve the design. My long-term goal is to move into a security-focused technology role where I can combine my certifications with deeper hands-on experience while continuing to grow as a developer and problem solver.
+              </p>
+            </div>
+          </section>
+  
+          <section className="content-section" id="projects" aria-labelledby="projects-title">
+            <div className="section-heading split-heading">
+              <div>
+                <p className="eyebrow">02 / Featured work</p>
+                <h2 id="projects-title">Projects with evidence</h2>
+              </div>
+              <p>Real repositories, documented decisions, and honest outcomes. No simulated project claims.</p>
+            </div>
+  
+            <div className="projects-list">
+              {projects.map((project, index) => (
+                <article className="project-card" id={project.id} key={project.id}>
+                  <div className="project-index" aria-hidden="true">{String(index + 1).padStart(2, '0')}</div>
+                  <div className="project-body">
+                    <p className="eyebrow">{project.eyebrow}</p>
+                    <h3>{project.title}</h3>
+                    <p className="project-summary">{project.summary}</p>
+                    <div className="project-detail-grid">
+                      <div>
+                        <h4>My role</h4>
+                        <p>{project.role}</p>
+                      </div>
+                      <div>
+                        <h4>Decisions that mattered</h4>
+                        <ul>
+                          {project.decisions.map((decision) => <li key={decision}>{decision}</li>)}
+                        </ul>
+                      </div>
+                    </div>
+                    <div className="project-outcome">
+                      <h4>Outcome & lessons</h4>
+                      <p>{project.outcome}</p>
+                    </div>
+                    <ul className="tech-list" aria-label={`${project.title} technologies`}>
+                      {project.technologies.map((technology) => <li key={technology}>{technology}</li>)}
+                    </ul>
+                    {project.evidenceUrl ? (
+                      <a className="evidence-link" href={project.evidenceUrl} target="_blank" rel="noreferrer">
+                        {project.evidenceLabel}<span aria-hidden="true">↗</span>
+                      </a>
+                    ) : (
+                      <a className="evidence-link current-project" href="#top">
+                        {project.evidenceLabel}<span aria-hidden="true">↑</span>
+                      </a>
+                    )}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+  
+          <section className="content-section" id="skills" aria-labelledby="skills-title">
+            <div className="section-heading">
+              <p className="eyebrow">03 / Skills and tools</p>
+              <h2 id="skills-title">Practical range, honestly represented</h2>
+            </div>
+            <div className="skills-grid">
+              {skillGroups.map((group) => (
+                <article className="skill-card" key={group.title}>
+                  <h3>{group.title}</h3>
+                  <ul>{group.items.map((item) => <li key={item}>{item}</li>)}</ul>
+                </article>
+              ))}
+            </div>
+            <div className="cert-strip">
+              <strong>Certifications</strong>
+              <ul>{certifications.map((certification) => <li key={certification}>{certification}</li>)}</ul>
+            </div>
+          </section>
+  
+          <section className="content-section resume-grid" id="resume" aria-labelledby="resume-title">
+            <div className="section-heading">
+              <p className="eyebrow">04 / Resume and links</p>
+              <h2 id="resume-title">The conventional route is always open.</h2>
+              <p className="section-intro">No animation or custom interface is required to reach the essentials.</p>
+            </div>
+            <div className="panel resume-panel">
+              <span className="document-mark" aria-hidden="true">PDF</span>
+              <div>
+                <h3>Luci Crow — Technology Resume</h3>
+                <p>Professional experience, education, certifications, and technical competencies.</p>
+                <div className="inline-actions">
+                  <a className="button primary" href={resumeUrl} target="_blank" rel="noreferrer">Preview resume</a>
+                  <a className="text-link" href={resumeUrl} download>Download PDF</a>
+                </div>
+              </div>
+            </div>
+          </section>
+  
+          <section className="content-section contact-section" id="contact" aria-labelledby="contact-title">
+            <div>
+              <p className="eyebrow">05 / Contact</p>
+              <h2 id="contact-title">Let’s solve something difficult.</h2>
+              <p>I’m interested in opportunities connecting support, systems, networking, security, and software.</p>
+            </div>
+            <address className="contact-links">
+              <a href="mailto:lucileecrow@gmail.com"><span>Email</span>lucileecrow@gmail.com</a>
+              <a href="tel:+13605426335"><span>Phone</span>(360) 542-6335</a>
+              <a href="https://github.com/LucisLight" target="_blank" rel="noreferrer"><span>GitHub</span>github.com/LucisLight</a>
+              <p><span>Location</span>Sedro-Woolley, Washington</p>
+            </address>
+          </section>
+  
+          <section className="content-section reflection-section" id="reflection" aria-labelledby="reflection-title">
+            <div className="section-heading">
+              <p className="eyebrow">06 / Reflection</p>
+              <h2 id="reflection-title">Why this portfolio exists</h2>
+            </div>
+            <div className="panel prose-panel reflection-copy">
+              <p>
+                I chose to build a personal React website because it gives me direct control over both the professional content and the experience around it. GitHub also lets reviewers see the work behind the finished portfolio instead of only seeing a template. CorvusDesk best represents my current abilities because it combines a React frontend, Spring Boot backend, MongoDB data, access levels, ticket history, filtering, sorting, and testing in one practical help-desk system. It connects my software development work with the support environments I already understand professionally.
+              </p>
+              <p>
+                In future versions, I want to deepen the rail applications, expand the mechanical intake sequence, add richer screenshots and code explanations, and build a safe simulated terminal. I would also like to continue improving performance, responsive behavior, and accessibility as the visual system becomes more animated. This portfolio supports my career goals by putting my certifications, IT experience, technical judgment, and software projects in one public place that employers can explore without needing access to a private system or classroom submission.
+              </p>
+            </div>
+          </section>
+        </main>
+  
+        <a className="back-to-top" href="#top" aria-label="Back to the top of the portfolio">
+          <span aria-hidden="true">↑</span>
+          Back to top
+        </a>
+  
+        <footer>
+          <p><strong>LuciOS</strong> — designed and built by Luci Crow.</p>
+          <p>Color-vision settings are saved only in this browser.</p>
+        </footer>
+      </div>
+    )
+}
