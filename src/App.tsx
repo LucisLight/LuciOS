@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import LuciOSDesktop from './desktop/LuciOSDesktop'
+import { useEvilBoot } from './desktop/useEvilBoot'
 import PortfolioPage from './portfolio/PortfolioPage'
 import { colorVisionOptions, type ColorVisionMode } from './data/portfolio'
 import {
@@ -9,6 +10,7 @@ import {
 } from './desktop/model'
 
 function App() {
+  const evilBoot = useEvilBoot()
   const resumeUrl = `${import.meta.env.BASE_URL}Luci-Crow-Technology-Resume.pdf`
   const powerButtonRef = useRef<HTMLButtonElement>(null)
   const bootOverlayRef = useRef<HTMLElement>(null)
@@ -134,12 +136,13 @@ function App() {
   }
 
   const openShell = (origin?: { x: number; y: number }) => {
-    const size = Math.min(500, window.innerWidth - 32, window.innerHeight - 48)
+    const width = Math.min(760, window.innerWidth - 32)
+    const height = Math.min(500, window.innerHeight - 48)
     openDesktopWindow({
       id: 'shell',
       kind: 'shell',
       title: 'Command interface',
-      ...ejectedWindowPosition(size, size, origin),
+      ...ejectedWindowPosition(width, height, origin),
     })
   }
 
@@ -305,6 +308,7 @@ function App() {
     setWindowEjection(null)
     setMachineProgress(0)
     setDesktopWindows([])
+    evilBoot.reset()
     setIsDesktopOpen(false)
     window.requestAnimationFrame(() => powerButtonRef.current?.focus())
   }
@@ -318,6 +322,7 @@ function App() {
     setAppTransfer(null)
     setWindowEjection(null)
     setMachineProgress(0)
+    evilBoot.reset()
     setIsBooting(true)
   }
 
@@ -328,6 +333,7 @@ function App() {
     onExit={exitDesktop} onLaunchApp={launchDesktopApp} onOpenFolder={openFolder}
     onMoveFolder={moveDesktopFolder} onOpenDocument={openDocument} onCloseWindow={closeDesktopWindow}
     onFocusWindow={focusDesktopWindow} onMoveWindow={moveDesktopWindow}
+    evilPhase={evilBoot.phase} evilProgress={evilBoot.progress} onEvilLuci={evilBoot.start}
   />
 
   return <PortfolioPage

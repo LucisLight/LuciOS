@@ -1,5 +1,6 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from 'react'
 import type { DesktopFolder } from './model'
+import { corruptLabel } from './corruption'
 
 type DraggableDesktopFolderProps = {
   folder: DesktopFolder
@@ -7,9 +8,10 @@ type DraggableDesktopFolderProps = {
   workspaceRef: RefObject<HTMLElement | null>
   onOpen: (folder: DesktopFolder) => void
   onMove: (id: string, x: number, y: number) => void
+  corrupted?: boolean
 }
 
-function DraggableDesktopFolder({ folder, index, workspaceRef, onOpen, onMove }: DraggableDesktopFolderProps) {
+function DraggableDesktopFolder({ folder, index, workspaceRef, onOpen, onMove, corrupted = false }: DraggableDesktopFolderProps) {
   const buttonRef = useRef<HTMLButtonElement>(null)
   const dragRef = useRef<{ pointerId: number; startX: number; startY: number; originX: number; originY: number } | null>(null)
   const didDragRef = useRef(false)
@@ -91,8 +93,8 @@ function DraggableDesktopFolder({ folder, index, workspaceRef, onOpen, onMove }:
       }}
     >
       <span className="folder-shape" aria-hidden="true"><i>{String(index + 1).padStart(2, '0')}</i></span>
-      <strong>{folder.label}</strong>
-      <small>{isDragging ? 'moving' : 'folder'}</small>
+      <strong>{corrupted ? corruptLabel(folder.label) : folder.label}</strong>
+      <small>{isDragging ? 'moving' : corrupted ? 'corrupted' : 'folder'}</small>
     </button>
   )
 }

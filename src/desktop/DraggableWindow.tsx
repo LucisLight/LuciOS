@@ -81,7 +81,7 @@ function DraggableWindow({ windowState, children, onClose, onFocus, onMove }: Dr
       >
         <span aria-hidden="true">{windowState.kind === 'folder' ? '▰' : windowState.kind === 'document' ? '▤' : windowState.kind === 'app' ? '◆' : '■'}</span>
         <strong id={`${windowState.id}-title`}>{windowState.title}</strong>
-        <small>{windowState.kind === 'shell' ? 'read-only' : windowState.kind}</small>
+        <small>{windowState.kind === 'shell' ? 'allowlisted' : windowState.kind}</small>
         <button
           className="window-close"
           type="button"

@@ -1,6 +1,10 @@
 import type { RefObject } from 'react'
 import DraggableDesktopFolder from './DraggableDesktopFolder'
 import DraggableWindow from './DraggableWindow'
+import EvilLuciLoader from './EvilLuciLoader'
+import ShellTerminal from './ShellTerminal'
+import type { EvilBootPhase } from './useEvilBoot'
+import { corruptLabel } from './corruption'
 import { desktopApps, type AppTransfer, type DesktopApp, type DesktopFolder, type DesktopWindowState, type WindowEjection } from './model'
 
 type LuciOSDesktopProps = {
@@ -21,21 +25,26 @@ type LuciOSDesktopProps = {
   onCloseWindow: (id: string) => void
   onFocusWindow: (id: string) => void
   onMoveWindow: (id: string, x: number, y: number) => void
+  evilPhase: EvilBootPhase
+  evilProgress: number
+  onEvilLuci: () => void
 }
 
 export default function LuciOSDesktop({
   desktopRef, machineFunnelRef, machineOutputRef, desktopFolders, desktopWindows,
   appTransfer, windowEjection, machineProgress, resumeUrl, onExit, onLaunchApp,
   onOpenFolder, onMoveFolder, onOpenDocument, onCloseWindow, onFocusWindow, onMoveWindow,
+  evilPhase, evilProgress, onEvilLuci,
 }: LuciOSDesktopProps) {
+  const evilActive = evilPhase === 'active'
   return (
-        <div className="lucios-desktop">
+        <div className={`lucios-desktop${evilActive ? ' evil-mode' : ''}`}>
           <a className="skip-link" href="#desktop-main">Skip to LuciOS desktop</a>
   
           <header className="desktop-header">
             <div className="desktop-brand">
               <span className="desktop-brand-mark" aria-hidden="true">LC</span>
-              <span><strong>LuciOS</strong><small>Desktop prototype // session 01</small></span>
+              <span><strong>{evilActive ? 'EvilLuciOS' : 'LuciOS'}</strong><small>{evilActive ? 'Shadow kernel // awakened' : 'Desktop prototype // session 01'}</small></span>
             </div>
             <div className="desktop-header-status" aria-label="LuciOS prototype status">
               <span><i aria-hidden="true" /> Core online</span>
@@ -68,8 +77,8 @@ export default function LuciOSDesktop({
                   title={`Send ${app.name} through the application intake machine`}
                 >
                   <span aria-hidden="true">{app.mark}</span>
-                  <strong>{app.name}</strong>
-                  <small>ready</small>
+                  <strong>{evilActive ? corruptLabel(app.name) : app.name}</strong>
+                  <small>{evilActive ? 'corrupted' : 'ready'}</small>
                 </button>
                 )
               })}
@@ -92,6 +101,7 @@ export default function LuciOSDesktop({
                     workspaceRef={desktopRef}
                     onOpen={onOpenFolder}
                     onMove={onMoveFolder}
+                    corrupted={evilActive}
                     key={folder.id}
                   />
                 ))}
@@ -138,17 +148,7 @@ export default function LuciOSDesktop({
                   key={desktopWindow.id}
                 >
                   {desktopWindow.kind === 'shell' && (
-                    <div className="command-screen" aria-label="Command interface preview. Input is disabled.">
-                      <p><span>LuciOS kernel</span> prototype channel</p>
-                      <p>mounting /desktop ................ <b>ok</b></p>
-                      <p>hand_interface ................... <b>online</b></p>
-                      <p>command_input .................... <b>locked</b></p>
-                      <div className="command-seal">
-                        <strong>INPUT LOCKED</strong>
-                        <span>Command module not connected yet.</span>
-                      </div>
-                      <p className="command-prompt" aria-hidden="true">luci@lucios:~$ <i /></p>
-                    </div>
+                    <ShellTerminal onEvilLuci={onEvilLuci} evilActive={evilPhase !== 'idle'} />
                   )}
   
                   {desktopWindow.kind === 'app' && (() => {
@@ -268,6 +268,8 @@ export default function LuciOSDesktop({
                 ? `Pixel hand is moving ${appTransfer.appName} to the application intake machine.`
                 : 'Application intake machine ready.'}
           </p>
+
+          <EvilLuciLoader phase={evilPhase} progress={evilProgress} />
   
           <footer className="desktop-footer">
             <span>LUCIOS // EXPERIMENTAL DESKTOP</span>

@@ -1,0 +1,133 @@
+.lucios-desktop.evil-mode {
+  --pink: #ff3548;
+  --pink-bright: #ffadb5;
+  --pink-deep: #9f0b19;
+  --accent-rgb: 255,53,72;
+  --bronze: #b91c2e;
+  --bronze-light: #ff6978;
+  --metal-rgb: 185,28,46;
+}
+
+.lucios-desktop.evil-mode::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg,rgba(255,0,24,.025) 0 1px,transparent 1px 4px);
+  mix-blend-mode: screen;
+}
+
+.evil-mode .desktop-app,
+.evil-mode .desktop-folder {
+  animation: corrupted-object 2.4s steps(1,end) infinite;
+}
+
+.evil-mode .desktop-app:nth-child(2n),
+.evil-mode .desktop-folder:nth-child(2n) { animation-delay: -.8s; }
+
+.evil-mode .desktop-app:nth-child(3n),
+.evil-mode .desktop-folder:nth-child(3n) { animation-delay: -1.6s; }
+
+.evil-mode .desktop-app strong,
+.evil-mode .desktop-folder strong {
+  color: #ff7b88;
+  text-shadow: 2px 0 #51000a,-2px 0 #fff;
+}
+
+.evil-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  color: #fff1f2;
+  background: radial-gradient(circle at 50% 45%,rgba(94,0,10,.5),rgba(2,0,1,.96) 58%);
+}
+
+.evil-loader-window {
+  width: min(700px,92vw);
+  padding: clamp(1.5rem,5vw,3.5rem);
+  border: 2px solid #a60d1c;
+  box-shadow: 0 0 0 5px #120104,0 0 55px rgba(255,0,37,.28),inset 0 0 50px rgba(255,0,37,.08);
+  background: linear-gradient(rgba(255,0,25,.045) 1px,transparent 1px),#070103;
+  background-size: 100% 1.25rem;
+  text-align: center;
+}
+
+.evil-loader-kicker { margin: 0 0 1rem; color: #ff6978; font: 800 .7rem/1.2 ui-monospace,monospace; letter-spacing: .16em; }
+.evil-loader h2 { margin: 0 0 2.8rem; color: #fff4f5; font: 900 clamp(2.4rem,8vw,5.5rem)/.9 ui-monospace,monospace; letter-spacing: -.08em; text-shadow: 4px 4px 0 #6f0712; }
+
+.evil-progress-track {
+  position: relative;
+  height: 22px;
+  margin: 0 1rem 2.4rem;
+  border: 2px solid #5e0a13;
+  background: #160207;
+}
+
+.evil-progress-track > i { display: block; height: 100%; background: repeating-linear-gradient(90deg,#8f0715 0 8px,#df1026 8px 16px,#ff4557 16px 20px); transition: width 80ms linear; }
+
+.evil-skull {
+  position: absolute;
+  top: 50%;
+  translate: -50% -50%;
+  z-index: 2;
+  width: 34px;
+  height: 34px;
+  color: #130105;
+  font: 900 30px/34px ui-monospace,monospace;
+  text-shadow: -1px 0 #ff8994,0 1px #ff8994,1px 0 #ff8994,0 -1px #ff8994;
+}
+
+.evil-skull b {
+  position: absolute;
+  top: 12px;
+  width: 4px;
+  height: 4px;
+  background: #270108;
+  box-shadow: 0 0 0 1px #050001;
+}
+
+.evil-skull b:first-of-type { left: 9px; }
+.evil-skull b:last-of-type { right: 9px; }
+
+.evil-skull b.is-lit {
+  background: #fff3b0;
+  box-shadow: 0 0 0 1px #ff2800,0 0 8px 3px #ff2800;
+}
+
+.evil-skull b.is-lit::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 2px;
+  width: 4px;
+  height: 4px;
+  background: #fff3b0;
+  box-shadow: 0 -4px #ffb000,4px -4px #ff5a00,0 -8px #ff2800,-4px -4px #ff2800;
+  animation: pixel-eye-fire .32s steps(2,end) infinite alternate;
+}
+
+.evil-progress-copy { display: flex; justify-content: space-between; gap: 1rem; color: #ff6978; font: 800 .68rem/1.2 ui-monospace,monospace; letter-spacing: .08em; text-transform: uppercase; }
+.evil-progress-copy span:first-child { color: #fff; font-size: 1rem; }
+
+@keyframes pixel-eye-fire {
+  0% { translate: 0 0; box-shadow: 0 -4px #ffb000,4px -4px #ff5a00,0 -8px #ff2800,-4px -4px #ff2800; }
+  100% { translate: 0 -2px; box-shadow: 0 -4px #fff3b0,-4px -4px #ff5a00,4px -8px #ff2800,0 -8px #ff2800; }
+}
+
+@keyframes corrupted-object {
+  0%,82%,100% { translate: 0 0; filter: none; }
+  84% { translate: 3px -2px; filter: contrast(1.8) saturate(1.6); }
+  86% { translate: -4px 1px; clip-path: inset(12% 0 48% 0); }
+  88% { translate: 2px 0; clip-path: inset(54% 0 10% 0); }
+  90% { translate: 0 0; clip-path: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .evil-skull b.is-lit::after { animation: none; }
+  .evil-mode .desktop-app,
+  .evil-mode .desktop-folder { animation: none; }
+}
