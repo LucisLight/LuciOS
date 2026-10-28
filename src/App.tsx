@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './App.css'
 
 type ColorVisionMode = 'standard' | 'protanopia' | 'deuteranopia' | 'tritanopia' | 'achromatopsia'
@@ -77,7 +77,7 @@ const projects: Project[] = [
       'Designed motion as progressive enhancement with reduced-motion and mobile fallbacks.',
     ],
     outcome:
-      'The submission edition establishes a responsive, accessible portfolio and a reusable design system. Future releases can add the animated shadow hand, mechanical loading sequence, terminal valve, and richer project media without rewriting the professional content.',
+      'The submission edition establishes a responsive, accessible portfolio and a reusable design system with an interactive mechanical startup sequence. Future releases can connect the pixel-shadow hand, terminal valve, and richer project media without rewriting the professional content.',
     technologies: ['React', 'TypeScript', 'Vite', 'CSS', 'Accessible HTML'],
     evidenceLabel: 'You are viewing the working project',
   },
@@ -111,22 +111,27 @@ const certifications = [
   'Microsoft Networking, Cloud & Security Fundamentals',
 ]
 
-function ShadowHand() {
-  return (
-    <div className="shadow-hand" aria-hidden="true">
-      <span className="hand-pixel wrist" />
-      <span className="hand-pixel palm" />
-      <span className="hand-pixel finger finger-one" />
-      <span className="hand-pixel finger finger-two" />
-      <span className="hand-pixel finger finger-three" />
-      <span className="hand-pixel finger finger-four" />
-      <span className="hand-pixel thumb" />
-    </div>
-  )
+const BOOT_DURATION = 7000
+
+type BootStall = {
+  start: number
+  duration: number
+}
+
+function createBootStalls(): BootStall[] {
+  return [
+    { start: 850 + Math.random() * 450, duration: 420 + Math.random() * 420 },
+    { start: 2700 + Math.random() * 500, duration: 520 + Math.random() * 480 },
+    { start: 4800 + Math.random() * 450, duration: 360 + Math.random() * 420 },
+  ]
 }
 
 function App() {
   const resumeUrl = `${import.meta.env.BASE_URL}Luci-Crow-Technology-Resume.pdf`
+  const powerButtonRef = useRef<HTMLButtonElement>(null)
+  const bootOverlayRef = useRef<HTMLElement>(null)
+  const [isBooting, setIsBooting] = useState(false)
+  const [bootProgress, setBootProgress] = useState(0)
   const [colorVisionMode, setColorVisionMode] = useState<ColorVisionMode>(() => {
     const savedMode = window.localStorage.getItem('lucios-color-vision')
     return colorVisionOptions.some((option) => option.value === savedMode)
@@ -139,9 +144,86 @@ function App() {
     window.localStorage.setItem('lucios-color-vision', colorVisionMode)
   }, [colorVisionMode])
 
+  useEffect(() => {
+    if (!isBooting) return
+
+    const previousOverflow = document.body.style.overflow
+    const startedAt = performance.now()
+    const stalls = createBootStalls()
+    const totalStallTime = stalls.reduce((total, stall) => total + stall.duration, 0)
+    const activeLoadTime = BOOT_DURATION - totalStallTime
+
+    document.body.style.overflow = 'hidden'
+    bootOverlayRef.current?.focus()
+
+    const progressTimer = window.setInterval(() => {
+      const elapsed = Math.min(performance.now() - startedAt, BOOT_DURATION)
+      const pausedTime = stalls.reduce((total, stall) => {
+        if (elapsed <= stall.start) return total
+        return total + Math.min(elapsed - stall.start, stall.duration)
+      }, 0)
+      const activeElapsed = Math.max(0, elapsed - pausedTime)
+      setBootProgress(Math.min(100, (activeElapsed / activeLoadTime) * 100))
+    }, 60)
+
+    const completionTimer = window.setTimeout(() => {
+      setBootProgress(100)
+      setIsBooting(false)
+      window.requestAnimationFrame(() => powerButtonRef.current?.focus())
+    }, BOOT_DURATION)
+
+    return () => {
+      window.clearInterval(progressTimer)
+      window.clearTimeout(completionTimer)
+      document.body.style.overflow = previousOverflow
+    }
+  }, [isBooting])
+
+  const bootStatus = bootProgress < 18
+    ? 'Waking mechanical core'
+    : bootProgress < 46
+      ? 'Aligning drive gears'
+      : bootProgress < 76
+        ? 'Charging interface rails'
+        : 'Opening LuciOS'
+
   return (
-    <div className="site-shell" id="top">
+    <div className="site-shell" id="top" aria-busy={isBooting}>
       <a className="skip-link" href="#main-content">Skip to portfolio content</a>
+
+      {isBooting && (
+        <section
+          className="boot-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="boot-title"
+          aria-describedby="boot-status"
+          tabIndex={-1}
+          ref={bootOverlayRef}
+        >
+          <div className="boot-console">
+            <p className="boot-kicker">System start // portfolio interface</p>
+            <h2 id="boot-title">LuciOS</h2>
+            <div className="boot-drive" aria-hidden="true">
+              <div className="boot-progress-fill" style={{ width: `${bootProgress}%` }} />
+              <span className="boot-gear boot-gear-one">✦</span>
+              <span className="boot-gear boot-gear-two">✦</span>
+              <span className="boot-gear boot-gear-three">✦</span>
+            </div>
+            <div
+              className="boot-progress"
+              role="progressbar"
+              aria-label="LuciOS startup progress"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(bootProgress)}
+            >
+              <span>{String(Math.round(bootProgress)).padStart(2, '0')}%</span>
+              <span id="boot-status" aria-live="polite">{bootStatus}</span>
+            </div>
+          </div>
+        </section>
+      )}
 
       <header className="topbar" aria-label="LuciOS header">
         <a className="wordmark" href="#top" aria-label="LuciOS home">
@@ -152,6 +234,20 @@ function App() {
           </span>
         </a>
         <div className="topbar-tools">
+          <button
+            className="power-button"
+            type="button"
+            onClick={() => {
+              setBootProgress(0)
+              setIsBooting(true)
+            }}
+            disabled={isBooting}
+            aria-label="Start the LuciOS interface"
+            ref={powerButtonRef}
+          >
+            <span className="power-glyph" aria-hidden="true" />
+            <span>Start LuciOS</span>
+          </button>
           <label className="vision-setting" htmlFor="color-vision-mode">
             <span>Color vision</span>
             <select
@@ -193,7 +289,7 @@ function App() {
             <p className="eyebrow">Technology portfolio of Luci Crow</p>
             <h1 id="hero-title">The portfolio<br /><em>is the interface.</em></h1>
             <p className="hero-lede">
-              Computer science student, IT technician, network specialist, and builder of practical systems—presented through a machine that is equal parts steampunk hardware and pastel-pink hologram.
+              Explore seven years of hands-on IT experience, security-focused training, and software projects built to solve practical problems.
             </p>
             <div className="hero-actions">
               <a className="button primary" href="#projects">Explore projects</a>
@@ -202,7 +298,6 @@ function App() {
           </div>
 
           <div className="hero-machine" aria-hidden="true">
-            <ShadowHand />
             <div className="machine-pipe pipe-top" />
             <div className="machine-screen">
               <span className="screen-label">LUCILIGHT // PROFILE</span>

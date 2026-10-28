@@ -9,6 +9,7 @@ LuciOS is Luci Crow's professional technology portfolio, presented as an origina
 - Professional introduction, career interests, technical skills, certifications, and contact information
 - Detailed case studies for CorvusDesk, Battleship Game, and LuciOS
 - Downloadable technology resume
+- Seven-second mechanical startup sequence with randomized loading pauses
 - Persistent back-to-top control and keyboard-visible focus states
 - Selectable color-vision modes for protanopia, deuteranopia, tritanopia, and achromatopsia
 - Reduced-motion support and responsive layouts
