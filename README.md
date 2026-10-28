@@ -10,7 +10,7 @@ LuciOS is Luci Crow's professional technology portfolio, presented as an origina
 - Detailed case studies for CorvusDesk, Battleship Game, and LuciOS
 - Downloadable technology resume
 - Seven-second mechanical startup sequence with randomized loading pauses
-- Prototype LuciOS desktop with shuffled folders, reusable draggable windows, and a pixel-shadow hand that carries rail apps through a mechanical intake machine
+- Prototype LuciOS desktop with shuffled folders, reusable draggable windows, a pixel-shadow hand, mechanical intake processing, side-funnel window ejection, and a functional professional-evidence Vault
 - Persistent back-to-top control and keyboard-visible focus states
 - Selectable color-vision modes for protanopia, deuteranopia, tritanopia, and achromatopsia
 - Reduced-motion support and responsive layouts

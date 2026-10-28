@@ -77,7 +77,7 @@ const projects: Project[] = [
       'Designed motion as progressive enhancement with reduced-motion and mobile fallbacks.',
     ],
     outcome:
-      'The submission edition establishes a responsive, accessible portfolio and a reusable design system with an interactive startup sequence, shared draggable-window system, and pixel-shadow hand that carries applications through a mechanical intake machine. Future releases can deepen the individual applications, terminal valve, and project media without rewriting the professional content.',
+      'The submission edition establishes a responsive, accessible portfolio and a reusable design system with an interactive startup sequence, shared draggable-window system, and pixel-shadow hand that carries applications through a mechanical intake machine. The machine now ejects each window through its side funnel, while Vault mounts verified professional evidence. Future releases can deepen the remaining applications, terminal valve, and project media without rewriting the professional content.',
     technologies: ['React', 'TypeScript', 'Vite', 'CSS', 'Accessible HTML'],
     evidenceLabel: 'You are viewing the working project',
   },
@@ -205,6 +205,16 @@ type AppTransfer = {
   y: number
 }
 
+type EjectionPhase = 'loaded' | 'spitting' | 'unfolding'
+
+type WindowEjection = {
+  appName: string
+  appMark: string
+  phase: EjectionPhase
+  x: number
+  y: number
+}
+
 function waitFor(milliseconds: number) {
   return new Promise<void>((resolve) => window.setTimeout(resolve, milliseconds))
 }
@@ -311,6 +321,7 @@ function App() {
   const bootOverlayRef = useRef<HTMLElement>(null)
   const desktopRef = useRef<HTMLElement>(null)
   const machineFunnelRef = useRef<HTMLDivElement>(null)
+  const machineOutputRef = useRef<HTMLDivElement>(null)
   const transferRunRef = useRef(0)
   const isTransferActiveRef = useRef(false)
   const windowZRef = useRef(20)
@@ -318,6 +329,7 @@ function App() {
   const [isDesktopOpen, setIsDesktopOpen] = useState(false)
   const [desktopWindows, setDesktopWindows] = useState<DesktopWindowState[]>([])
   const [appTransfer, setAppTransfer] = useState<AppTransfer | null>(null)
+  const [windowEjection, setWindowEjection] = useState<WindowEjection | null>(null)
   const [machineProgress, setMachineProgress] = useState(0)
   const [bootProgress, setBootProgress] = useState(0)
   const [desktopFolders, setDesktopFolders] = useState(createDesktopFolders)
@@ -420,30 +432,38 @@ function App() {
     y: Math.max(12, (window.innerHeight - height) / 2 + cascade),
   })
 
-  const openShell = () => {
+  const ejectedWindowPosition = (width: number, height: number, center?: { x: number; y: number }) => {
+    if (!center) return centeredWindowPosition(width, height, 32)
+    return {
+      x: Math.min(Math.max(12, center.x - width / 2), Math.max(12, window.innerWidth - width - 12)),
+      y: Math.min(Math.max(12, center.y - height / 2), Math.max(12, window.innerHeight - height - 12)),
+    }
+  }
+
+  const openShell = (origin?: { x: number; y: number }) => {
     const size = Math.min(500, window.innerWidth - 32, window.innerHeight - 48)
     openDesktopWindow({
       id: 'shell',
       kind: 'shell',
       title: 'Command interface',
-      ...centeredWindowPosition(size, size),
+      ...ejectedWindowPosition(size, size, origin),
     })
   }
 
-  const openPrototypeApp = (app: DesktopApp) => {
+  const openPrototypeApp = (app: DesktopApp, origin?: { x: number; y: number }) => {
     if (app.id === 'shell') {
-      openShell()
+      openShell(origin)
       return
     }
 
-    const width = Math.min(460, window.innerWidth - 32)
-    const height = Math.min(340, window.innerHeight - 48)
+    const width = Math.min(app.id === 'vault' ? 680 : 460, window.innerWidth - 32)
+    const height = Math.min(app.id === 'vault' ? 470 : 340, window.innerHeight - 48)
     openDesktopWindow({
       id: `app-${app.id}`,
       kind: 'app',
       title: app.name,
       appId: app.id,
-      ...centeredWindowPosition(width, height, 32),
+      ...ejectedWindowPosition(width, height, origin),
     })
   }
 
@@ -521,11 +541,37 @@ function App() {
       setMachineProgress(progress.value)
     }
 
-    await waitFor(duration(300))
+    await waitFor(duration(240))
     if (!stillRunning()) return
-    openPrototypeApp(app)
+
+    const output = machineOutputRef.current?.getBoundingClientRect()
+    const outputOrigin = output ? {
+      x: Math.max(110, output.left - 82),
+      y: output.top + output.height / 2,
+    } : undefined
+
+    if (output && outputOrigin) {
+      setWindowEjection({
+        appName: app.name,
+        appMark: app.mark,
+        phase: 'loaded',
+        x: output.left + 12,
+        y: output.top + output.height / 2,
+      })
+      await waitFor(duration(70))
+      if (!stillRunning()) return
+      setWindowEjection((ejection) => ejection ? { ...ejection, phase: 'spitting', ...outputOrigin } : null)
+      await waitFor(duration(620))
+      if (!stillRunning()) return
+      setWindowEjection((ejection) => ejection ? { ...ejection, phase: 'unfolding' } : null)
+      await waitFor(duration(560))
+      if (!stillRunning()) return
+    }
+
+    openPrototypeApp(app, outputOrigin)
     setMachineProgress(0)
     setAppTransfer(null)
+    setWindowEjection(null)
     isTransferActiveRef.current = false
   }
 
@@ -572,6 +618,7 @@ function App() {
                 transferRunRef.current += 1
                 isTransferActiveRef.current = false
                 setAppTransfer(null)
+                setWindowEjection(null)
                 setMachineProgress(0)
                 setDesktopWindows([])
                 setIsDesktopOpen(false)
@@ -595,7 +642,7 @@ function App() {
               <button
                 type="button"
                 className={`desktop-app desktop-app-ready${isCarried ? ' is-transferring' : ''}`}
-                disabled={Boolean(appTransfer)}
+                disabled={Boolean(appTransfer || windowEjection)}
                 onClick={(event) => launchDesktopApp(app, event.currentTarget)}
                 data-app-id={app.id}
                 key={app.id}
@@ -641,11 +688,11 @@ function App() {
           </section>
 
           <aside
-            className={`desktop-intake-machine${machineProgress > 0 ? ' is-processing' : ''}${appTransfer?.phase === 'dropping' ? ' is-receiving' : ''}`}
+            className={`desktop-intake-machine${machineProgress > 0 ? ' is-processing' : ''}${appTransfer?.phase === 'dropping' ? ' is-receiving' : ''}${windowEjection ? ' is-ejecting' : ''}`}
             aria-label="Application intake machine"
           >
             <div className="machine-funnel machine-funnel-top" aria-hidden="true" ref={machineFunnelRef}><i /></div>
-            <div className="machine-funnel machine-funnel-side" aria-hidden="true"><i /></div>
+            <div className="machine-funnel machine-funnel-side" aria-hidden="true" ref={machineOutputRef}><i /></div>
             <div className="machine-body" aria-hidden="true">
               <span className="machine-rivet machine-rivet-one" />
               <span className="machine-rivet machine-rivet-two" />
@@ -696,6 +743,41 @@ function App() {
                 {desktopWindow.kind === 'app' && (() => {
                   const app = desktopApps.find((candidate) => candidate.id === desktopWindow.appId)
                   if (!app) return null
+
+                  if (app.id === 'vault') return (
+                    <div className="vault-window-body">
+                      <header className="vault-window-heading">
+                        <span aria-hidden="true">VT</span>
+                        <div>
+                          <p className="app-window-kicker">LuciOS evidence vault // live links</p>
+                          <h2>Professional archive</h2>
+                          <p>Resume, source repositories, and original planning documents.</p>
+                        </div>
+                      </header>
+                      <div className="vault-files">
+                        <a href={resumeUrl} target="_blank" rel="noreferrer">
+                          <span aria-hidden="true">PDF</span><strong>Technology Resume</strong><small>Open downloadable PDF</small>
+                        </a>
+                        <a href="https://github.com/LucisLight" target="_blank" rel="noreferrer">
+                          <span aria-hidden="true">GH</span><strong>GitHub Profile</strong><small>View public work</small>
+                        </a>
+                        <a href="https://github.com/LucisLight/CorvusDesk" target="_blank" rel="noreferrer">
+                          <span aria-hidden="true">CD</span><strong>CorvusDesk</strong><small>Source and documentation</small>
+                        </a>
+                        <a href="https://github.com/LucisLight/Battleship-Game" target="_blank" rel="noreferrer">
+                          <span aria-hidden="true">BS</span><strong>Battleship Game</strong><small>Java project source</small>
+                        </a>
+                        <a href="https://github.com/LucisLight/LuciOS" target="_blank" rel="noreferrer">
+                          <span aria-hidden="true">OS</span><strong>LuciOS Source</strong><small>Portfolio repository</small>
+                        </a>
+                        <a href="https://github.com/LucisLight/LuciOS/tree/main/documentation/original-package" target="_blank" rel="noreferrer">
+                          <span aria-hidden="true">DOC</span><strong>Original Documentation</strong><small>Complete v1.1 planning package</small>
+                        </a>
+                      </div>
+                      <div className="vault-window-status"><i aria-hidden="true" /> Six verified public destinations mounted.</div>
+                    </div>
+                  )
+
                   return (
                     <div className="app-window-body">
                       <span aria-hidden="true">{app.mark}</span>
@@ -752,8 +834,24 @@ function App() {
           </div>
         )}
 
+        {windowEjection && (
+          <div
+            className={`window-cartridge phase-${windowEjection.phase}`}
+            style={{ left: windowEjection.x, top: windowEjection.y }}
+            aria-hidden="true"
+          >
+            <span className="cartridge-rivet cartridge-rivet-one" />
+            <span className="cartridge-rivet cartridge-rivet-two" />
+            <i>{windowEjection.appMark}</i>
+            <strong>{windowEjection.appName}</strong>
+            <small>WINDOW OUTPUT</small>
+          </div>
+        )}
+
         <p className="sr-only" role="status" aria-live="polite">
-          {appTransfer?.phase === 'processing'
+          {windowEjection
+            ? `Machine is ejecting the ${windowEjection.appName} window.`
+            : appTransfer?.phase === 'processing'
             ? `Machine processing ${appTransfer.appName}: ${machineProgress} percent.`
             : appTransfer
               ? `Pixel hand is moving ${appTransfer.appName} to the application intake machine.`
@@ -825,6 +923,7 @@ function App() {
               setDesktopFolders(createDesktopFolders())
               setDesktopWindows([])
               setAppTransfer(null)
+              setWindowEjection(null)
               setMachineProgress(0)
               setIsBooting(true)
             }}
