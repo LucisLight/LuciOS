@@ -73,11 +73,11 @@ const projects: Project[] = [
       'Designer, content owner, and frontend developer. I defined the interaction concept, requirements, accessibility priorities, project architecture, and visual direction before building the React experience.',
     decisions: [
       'Kept a conventional portfolio path so the presentation never blocks the content.',
-      'Used a reusable overhead app rail and single display model instead of a complex window manager.',
+      'Built the app rail and window manager from reusable components so every module shares the same interaction rules.',
       'Designed motion as progressive enhancement with reduced-motion and mobile fallbacks.',
     ],
     outcome:
-      'The submission edition establishes a responsive, accessible portfolio and a reusable design system with an interactive startup sequence, prototype desktop shell, and shared draggable-window system. Future releases can connect the applications, pixel-shadow hand, terminal valve, and richer project media without rewriting the professional content.',
+      'The submission edition establishes a responsive, accessible portfolio and a reusable design system with an interactive startup sequence, shared draggable-window system, and pixel-shadow hand that carries applications through a mechanical intake machine. Future releases can deepen the individual applications, terminal valve, and project media without rewriting the professional content.',
     technologies: ['React', 'TypeScript', 'Vite', 'CSS', 'Accessible HTML'],
     evidenceLabel: 'You are viewing the working project',
   },
@@ -140,13 +140,15 @@ const desktopFolderPool = [
 ]
 
 const desktopApps = [
-  { id: 'arc-mail', name: 'Arc Mail', mark: 'AM' },
-  { id: 'clockwork', name: 'Clockwork', mark: 'CW' },
-  { id: 'signal', name: 'Signal', mark: 'SG' },
-  { id: 'vault', name: 'Vault', mark: 'VT' },
-  { id: 'muse', name: 'Muse', mark: 'MS' },
-  { id: 'shell', name: 'Shell', mark: '>_' },
+  { id: 'arc-mail', name: 'Arc Mail', mark: 'AM', description: 'A communications console placeholder for future messages and project dispatches.' },
+  { id: 'clockwork', name: 'Clockwork', mark: 'CW', description: 'A scheduling and timekeeping module awaiting its first working mechanism.' },
+  { id: 'signal', name: 'Signal', mark: 'SG', description: 'A network-monitoring display reserved for future infrastructure demonstrations.' },
+  { id: 'vault', name: 'Vault', mark: 'VT', description: 'A sealed storage interface prepared for protected portfolio artifacts.' },
+  { id: 'muse', name: 'Muse', mark: 'MS', description: 'A creative notebook shell for sketches, concepts, and design experiments.' },
+  { id: 'shell', name: 'Shell', mark: '>_', description: 'The locked LuciOS command interface.' },
 ]
+
+type DesktopApp = (typeof desktopApps)[number]
 
 const desktopFolderSlots = [
   { x: 7, y: 9 },
@@ -179,7 +181,7 @@ function createDesktopFolders() {
   }))
 }
 
-type DesktopWindowKind = 'shell' | 'folder' | 'document'
+type DesktopWindowKind = 'shell' | 'folder' | 'document' | 'app'
 
 type DesktopWindowState = {
   id: string
@@ -189,6 +191,22 @@ type DesktopWindowState = {
   y: number
   z: number
   folderId?: string
+  appId?: string
+}
+
+type HandPhase = 'entering' | 'reaching' | 'gripping' | 'carrying' | 'dropping' | 'processing' | 'exiting'
+
+type AppTransfer = {
+  appId: string
+  appName: string
+  appMark: string
+  phase: HandPhase
+  x: number
+  y: number
+}
+
+function waitFor(milliseconds: number) {
+  return new Promise<void>((resolve) => window.setTimeout(resolve, milliseconds))
 }
 
 type DraggableWindowProps = {
@@ -269,7 +287,7 @@ function DraggableWindow({ windowState, children, onClose, onFocus, onMove }: Dr
         }}
         aria-label={`${windowState.title} window. Drag to move, use arrow keys to reposition, or press Escape to close.`}
       >
-        <span aria-hidden="true">{windowState.kind === 'folder' ? '▰' : windowState.kind === 'document' ? '▤' : '■'}</span>
+        <span aria-hidden="true">{windowState.kind === 'folder' ? '▰' : windowState.kind === 'document' ? '▤' : windowState.kind === 'app' ? '◆' : '■'}</span>
         <strong id={`${windowState.id}-title`}>{windowState.title}</strong>
         <small>{windowState.kind === 'shell' ? 'read-only' : windowState.kind}</small>
         <button
@@ -292,11 +310,15 @@ function App() {
   const powerButtonRef = useRef<HTMLButtonElement>(null)
   const bootOverlayRef = useRef<HTMLElement>(null)
   const desktopRef = useRef<HTMLElement>(null)
-  const shellAppRef = useRef<HTMLButtonElement>(null)
+  const machineFunnelRef = useRef<HTMLDivElement>(null)
+  const transferRunRef = useRef(0)
+  const isTransferActiveRef = useRef(false)
   const windowZRef = useRef(20)
   const [isBooting, setIsBooting] = useState(false)
   const [isDesktopOpen, setIsDesktopOpen] = useState(false)
   const [desktopWindows, setDesktopWindows] = useState<DesktopWindowState[]>([])
+  const [appTransfer, setAppTransfer] = useState<AppTransfer | null>(null)
+  const [machineProgress, setMachineProgress] = useState(0)
   const [bootProgress, setBootProgress] = useState(0)
   const [desktopFolders, setDesktopFolders] = useState(createDesktopFolders)
   const [colorVisionMode, setColorVisionMode] = useState<ColorVisionMode>(() => {
@@ -370,9 +392,10 @@ function App() {
 
   const closeDesktopWindow = (id: string) => {
     setDesktopWindows((windows) => windows.filter((desktopWindow) => desktopWindow.id !== id))
-    if (id === 'shell') {
-      window.requestAnimationFrame(() => shellAppRef.current?.focus({ preventScroll: true }))
-    }
+    const launcherId = id === 'shell' ? 'shell' : id.startsWith('app-') ? id.slice(4) : null
+    if (launcherId) window.requestAnimationFrame(() => {
+      document.querySelector<HTMLButtonElement>(`[data-app-id="${launcherId}"]`)?.focus({ preventScroll: true })
+    })
   }
 
   const openDesktopWindow = (windowState: Omit<DesktopWindowState, 'z'>) => {
@@ -405,6 +428,105 @@ function App() {
       title: 'Command interface',
       ...centeredWindowPosition(size, size),
     })
+  }
+
+  const openPrototypeApp = (app: DesktopApp) => {
+    if (app.id === 'shell') {
+      openShell()
+      return
+    }
+
+    const width = Math.min(460, window.innerWidth - 32)
+    const height = Math.min(340, window.innerHeight - 48)
+    openDesktopWindow({
+      id: `app-${app.id}`,
+      kind: 'app',
+      title: app.name,
+      appId: app.id,
+      ...centeredWindowPosition(width, height, 32),
+    })
+  }
+
+  const launchDesktopApp = async (app: DesktopApp, launcher: HTMLButtonElement) => {
+    if (isTransferActiveRef.current) return
+    isTransferActiveRef.current = true
+
+    const funnel = machineFunnelRef.current?.getBoundingClientRect()
+    const source = launcher.getBoundingClientRect()
+    if (!funnel) {
+      openPrototypeApp(app)
+      isTransferActiveRef.current = false
+      return
+    }
+
+    const runId = ++transferRunRef.current
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const duration = (milliseconds: number) => reducedMotion ? Math.max(40, milliseconds * .12) : milliseconds
+    const stillRunning = () => transferRunRef.current === runId
+    const appX = source.left + source.width / 2
+    const appY = source.top + source.height / 2
+    const funnelX = funnel.left + funnel.width / 2
+    const funnelY = funnel.top + funnel.height * .22
+
+    setMachineProgress(0)
+    setAppTransfer({
+      appId: app.id,
+      appName: app.name,
+      appMark: app.mark,
+      phase: 'entering',
+      x: window.innerWidth + 150,
+      y: appY,
+    })
+
+    await waitFor(duration(80))
+    if (!stillRunning()) return
+    setAppTransfer((transfer) => transfer ? { ...transfer, phase: 'reaching', x: appX, y: appY } : null)
+
+    await waitFor(duration(720))
+    if (!stillRunning()) return
+    setAppTransfer((transfer) => transfer ? { ...transfer, phase: 'gripping' } : null)
+
+    await waitFor(duration(360))
+    if (!stillRunning()) return
+    setAppTransfer((transfer) => transfer ? { ...transfer, phase: 'carrying', x: funnelX, y: funnelY } : null)
+
+    await waitFor(duration(1150))
+    if (!stillRunning()) return
+    setAppTransfer((transfer) => transfer ? { ...transfer, phase: 'dropping' } : null)
+
+    await waitFor(duration(360))
+    if (!stillRunning()) return
+    setMachineProgress(8)
+    setAppTransfer((transfer) => transfer ? {
+      ...transfer,
+      phase: 'exiting',
+      x: window.innerWidth + 160,
+      y: Math.max(70, funnelY - 60),
+    } : null)
+
+    await waitFor(duration(620))
+    if (!stillRunning()) return
+    setAppTransfer((transfer) => transfer ? { ...transfer, phase: 'processing' } : null)
+
+    const progressStops = [
+      { value: 24, pause: 360 },
+      { value: 41, pause: 470 },
+      { value: 68, pause: 310 },
+      { value: 83, pause: 430 },
+      { value: 100, pause: 340 },
+    ]
+    for (const progress of progressStops) {
+      await waitFor(duration(progress.pause))
+      if (!stillRunning()) return
+      setMachineProgress(progress.value)
+    }
+
+    await waitFor(duration(300))
+    if (!stillRunning()) return
+    openPrototypeApp(app)
+    setMachineProgress(0)
+    setAppTransfer(null)
+    isTransferActiveRef.current = false
   }
 
   const openFolder = (folder: DesktopFolder) => {
@@ -447,6 +569,10 @@ function App() {
               type="button"
               className="desktop-exit"
               onClick={() => {
+                transferRunRef.current += 1
+                isTransferActiveRef.current = false
+                setAppTransfer(null)
+                setMachineProgress(0)
                 setDesktopWindows([])
                 setIsDesktopOpen(false)
                 window.requestAnimationFrame(() => powerButtonRef.current?.focus())
@@ -463,20 +589,21 @@ function App() {
           <div className="desktop-rail-track" aria-hidden="true" />
           <div className="desktop-apps">
             {desktopApps.map((app) => {
-              const isShell = app.id === 'shell'
+              const isCarried = appTransfer?.appId === app.id
+                && ['gripping', 'carrying', 'dropping'].includes(appTransfer.phase)
               return (
               <button
                 type="button"
-                className={`desktop-app${isShell ? ' desktop-app-ready' : ''}`}
-                disabled={!isShell}
-                onClick={isShell ? openShell : undefined}
-                ref={isShell ? shellAppRef : undefined}
+                className={`desktop-app desktop-app-ready${isCarried ? ' is-transferring' : ''}`}
+                disabled={Boolean(appTransfer)}
+                onClick={(event) => launchDesktopApp(app, event.currentTarget)}
+                data-app-id={app.id}
                 key={app.id}
-                title={isShell ? 'Open the locked command interface' : 'Prototype app — not connected yet'}
+                title={`Send ${app.name} through the application intake machine`}
               >
                 <span aria-hidden="true">{app.mark}</span>
                 <strong>{app.name}</strong>
-                <small>{isShell ? 'ready' : 'offline'}</small>
+                <small>ready</small>
               </button>
               )
             })}
@@ -514,22 +641,30 @@ function App() {
           </section>
 
           <aside
-            className="desktop-intake-machine"
-            role="img"
-            aria-label="Application intake machine. Hand interface is not connected yet."
+            className={`desktop-intake-machine${machineProgress > 0 ? ' is-processing' : ''}${appTransfer?.phase === 'dropping' ? ' is-receiving' : ''}`}
+            aria-label="Application intake machine"
           >
-            <div className="machine-funnel machine-funnel-top" aria-hidden="true"><i /></div>
+            <div className="machine-funnel machine-funnel-top" aria-hidden="true" ref={machineFunnelRef}><i /></div>
             <div className="machine-funnel machine-funnel-side" aria-hidden="true"><i /></div>
             <div className="machine-body" aria-hidden="true">
               <span className="machine-rivet machine-rivet-one" />
               <span className="machine-rivet machine-rivet-two" />
               <span className="machine-rivet machine-rivet-three" />
               <span className="machine-rivet machine-rivet-four" />
-              <span className="machine-slot" />
+              <span
+                className="machine-slot"
+                role="progressbar"
+                aria-label={appTransfer ? `Processing ${appTransfer.appName}` : 'Application processor idle'}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={machineProgress}
+              >
+                <i style={{ width: `${machineProgress}%` }} />
+              </span>
               <span className="machine-gear machine-gear-large">✦</span>
               <span className="machine-gear machine-gear-small">✦</span>
               <strong>APP INTAKE</strong>
-              <small>HAND PORT // STANDBY</small>
+              <small>{machineProgress > 0 ? `PROCESSING // ${machineProgress}%` : 'HAND PORT // READY'}</small>
             </div>
             <div className="machine-feet" aria-hidden="true"><i /><i /></div>
           </aside>
@@ -548,7 +683,7 @@ function App() {
                   <div className="command-screen" aria-label="Command interface preview. Input is disabled.">
                     <p><span>LuciOS kernel</span> prototype channel</p>
                     <p>mounting /desktop ................ <b>ok</b></p>
-                    <p>hand_interface ................... <b>pending</b></p>
+                    <p>hand_interface ................... <b>online</b></p>
                     <p>command_input .................... <b>locked</b></p>
                     <div className="command-seal">
                       <strong>INPUT LOCKED</strong>
@@ -557,6 +692,20 @@ function App() {
                     <p className="command-prompt" aria-hidden="true">luci@lucios:~$ <i /></p>
                   </div>
                 )}
+
+                {desktopWindow.kind === 'app' && (() => {
+                  const app = desktopApps.find((candidate) => candidate.id === desktopWindow.appId)
+                  if (!app) return null
+                  return (
+                    <div className="app-window-body">
+                      <span aria-hidden="true">{app.mark}</span>
+                      <p className="app-window-kicker">LuciOS module // prototype output</p>
+                      <h2>{app.name}</h2>
+                      <p>{app.description}</p>
+                      <div className="app-window-status"><i aria-hidden="true" /> Module frame loaded. Internal tools are not connected yet.</div>
+                    </div>
+                  )
+                })()}
 
                 {desktopWindow.kind === 'folder' && folder && (
                   <div className="folder-window-body">
@@ -583,9 +732,37 @@ function App() {
           })}
         </main>
 
+        {appTransfer && (
+          <div
+            className={`pixel-hand phase-${appTransfer.phase}`}
+            style={{ left: appTransfer.x, top: appTransfer.y }}
+            aria-hidden="true"
+          >
+            <span className="pixel-hand-arm" />
+            <span className="pixel-hand-wrist" />
+            <span className="pixel-hand-palm" />
+            <span className="pixel-finger pixel-finger-one" />
+            <span className="pixel-finger pixel-finger-two" />
+            <span className="pixel-finger pixel-finger-three" />
+            <span className="pixel-finger pixel-thumb" />
+            <span className="hand-payload">
+              <i>{appTransfer.appMark}</i>
+              <strong>{appTransfer.appName}</strong>
+            </span>
+          </div>
+        )}
+
+        <p className="sr-only" role="status" aria-live="polite">
+          {appTransfer?.phase === 'processing'
+            ? `Machine processing ${appTransfer.appName}: ${machineProgress} percent.`
+            : appTransfer
+              ? `Pixel hand is moving ${appTransfer.appName} to the application intake machine.`
+              : 'Application intake machine ready.'}
+        </p>
+
         <footer className="desktop-footer">
           <span>LUCIOS // EXPERIMENTAL DESKTOP</span>
-          <span>Folders contain prototype files; unlit applications remain placeholders.</span>
+          <span>Rail applications open prototype modules through the intake machine.</span>
         </footer>
       </div>
     )
@@ -642,9 +819,13 @@ function App() {
             className="power-button"
             type="button"
             onClick={() => {
+              transferRunRef.current += 1
+              isTransferActiveRef.current = false
               setBootProgress(0)
               setDesktopFolders(createDesktopFolders())
               setDesktopWindows([])
+              setAppTransfer(null)
+              setMachineProgress(0)
               setIsBooting(true)
             }}
             disabled={isBooting}
@@ -851,7 +1032,7 @@ function App() {
               I chose to build a personal React website because it gives me direct control over both the professional content and the experience around it. GitHub also lets reviewers see the work behind the finished portfolio instead of only seeing a template. CorvusDesk best represents my current abilities because it combines a React frontend, Spring Boot backend, MongoDB data, access levels, ticket history, filtering, sorting, and testing in one practical help-desk system. It connects my software development work with the support environments I already understand professionally.
             </p>
             <p>
-              In future versions, I want to expand LuciOS with a reusable pixel-shadow hand, a mechanical application conveyor, richer screenshots and code explanations, and a safe simulated terminal. I would also like to continue improving performance, responsive behavior, and accessibility as the visual system becomes more animated. This portfolio supports my career goals by putting my certifications, IT experience, technical judgment, and software projects in one public place that employers can explore without needing access to a private system or classroom submission.
+              In future versions, I want to deepen the rail applications, expand the mechanical intake sequence, add richer screenshots and code explanations, and build a safe simulated terminal. I would also like to continue improving performance, responsive behavior, and accessibility as the visual system becomes more animated. This portfolio supports my career goals by putting my certifications, IT experience, technical judgment, and software projects in one public place that employers can explore without needing access to a private system or classroom submission.
             </p>
           </div>
         </section>
