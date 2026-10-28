@@ -5,6 +5,8 @@ import EvilLuciLoader from './EvilLuciLoader'
 import ShellTerminal from './ShellTerminal'
 import type { EvilBootPhase } from './useEvilBoot'
 import { corruptLabel } from './corruption'
+import GameWindow from './games/GameWindow'
+import { gameAppIds } from './games/gameRegistry'
 import { desktopApps, type AppTransfer, type DesktopApp, type DesktopFolder, type DesktopWindowState, type WindowEjection } from './model'
 
 type LuciOSDesktopProps = {
@@ -28,6 +30,8 @@ type LuciOSDesktopProps = {
   evilPhase: EvilBootPhase
   evilProgress: number
   onEvilLuci: () => void
+  credits: number
+  onCreditDelta: (delta: number) => void
 }
 
 export default function LuciOSDesktop({
@@ -35,6 +39,7 @@ export default function LuciOSDesktop({
   appTransfer, windowEjection, machineProgress, resumeUrl, onExit, onLaunchApp,
   onOpenFolder, onMoveFolder, onOpenDocument, onCloseWindow, onFocusWindow, onMoveWindow,
   evilPhase, evilProgress, onEvilLuci,
+  credits, onCreditDelta,
 }: LuciOSDesktopProps) {
   const evilActive = evilPhase === 'active'
   return (
@@ -47,6 +52,7 @@ export default function LuciOSDesktop({
               <span><strong>{evilActive ? 'EvilLuciOS' : 'LuciOS'}</strong><small>{evilActive ? 'Shadow kernel // awakened' : 'Desktop prototype // session 01'}</small></span>
             </div>
             <div className="desktop-header-status" aria-label="LuciOS prototype status">
+              <span className="credit-counter">¢ {credits} credits</span>
               <span><i aria-hidden="true" /> Core online</span>
               <button
                 type="button"
@@ -154,6 +160,8 @@ export default function LuciOSDesktop({
                   {desktopWindow.kind === 'app' && (() => {
                     const app = desktopApps.find((candidate) => candidate.id === desktopWindow.appId)
                     if (!app) return null
+
+                    if (gameAppIds.includes(app.id)) return <GameWindow appId={app.id} credits={credits} onCreditDelta={onCreditDelta} />
   
                     if (app.id === 'vault') return (
                       <div className="vault-window-body">

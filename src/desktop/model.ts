@@ -27,11 +27,12 @@ const desktopFolderPool = [
 ]
 
 export const desktopApps = [
-  { id: 'arc-mail', name: 'Arc Mail', mark: 'AM', description: 'A communications console placeholder for future messages and project dispatches.' },
-  { id: 'clockwork', name: 'Clockwork', mark: 'CW', description: 'A scheduling and timekeeping module awaiting its first working mechanism.' },
-  { id: 'signal', name: 'Signal', mark: 'SG', description: 'A network-monitoring display reserved for future infrastructure demonstrations.' },
+  { id: 'snake', name: 'Snake', mark: 'SN', description: 'A compact signal-serpent arcade module.' },
+  { id: 'stackfall', name: 'Stackfall', mark: 'SF', description: 'An original falling-block gravity stack.' },
+  { id: 'fleet-destroyer', name: 'Fleet Destroyer', mark: 'FD', description: 'A compact naval strategy game with randomized fleets.' },
+  { id: 'brickbreaker', name: 'Brickbreaker', mark: 'BR', description: 'A paddle-driven impact chamber full of breakable bricks.' },
+  { id: 'slots', name: 'Lucky Circuit', mark: '$', description: 'A three-line slot engine powered by LuciOS credits.' },
   { id: 'vault', name: 'Vault', mark: 'VT', description: 'A sealed storage interface prepared for protected portfolio artifacts.' },
-  { id: 'muse', name: 'Muse', mark: 'MS', description: 'A creative notebook shell for sketches, concepts, and design experiments.' },
   { id: 'shell', name: 'Shell', mark: '>_', description: 'The locked LuciOS command interface.' },
 ]
 

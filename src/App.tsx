@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import './App.css'
 import LuciOSDesktop from './desktop/LuciOSDesktop'
 import { useEvilBoot } from './desktop/useEvilBoot'
@@ -26,6 +26,7 @@ function App() {
   const [appTransfer, setAppTransfer] = useState<AppTransfer | null>(null)
   const [windowEjection, setWindowEjection] = useState<WindowEjection | null>(null)
   const [machineProgress, setMachineProgress] = useState(0)
+  const [credits, setCredits] = useState(100)
   const [bootProgress, setBootProgress] = useState(0)
   const [desktopFolders, setDesktopFolders] = useState(createDesktopFolders)
   const [colorVisionMode, setColorVisionMode] = useState<ColorVisionMode>(() => {
@@ -34,6 +35,7 @@ function App() {
       ? savedMode as ColorVisionMode
       : 'standard'
   })
+  const adjustCredits = useCallback((delta: number) => setCredits((current) => Math.max(0, current + delta)), [])
 
   useEffect(() => {
     document.documentElement.dataset.colorVision = colorVisionMode
@@ -152,8 +154,9 @@ function App() {
       return
     }
 
-    const width = Math.min(app.id === 'vault' ? 680 : 460, window.innerWidth - 32)
-    const height = Math.min(app.id === 'vault' ? 470 : 340, window.innerHeight - 48)
+    const isGame = ['snake', 'stackfall', 'fleet-destroyer', 'brickbreaker', 'slots'].includes(app.id)
+    const width = Math.min(isGame ? 720 : app.id === 'vault' ? 680 : 460, window.innerWidth - 32)
+    const height = Math.min(isGame ? 600 : app.id === 'vault' ? 470 : 340, window.innerHeight - 48)
     openDesktopWindow({
       id: `app-${app.id}`,
       kind: 'app',
@@ -323,6 +326,7 @@ function App() {
     setWindowEjection(null)
     setMachineProgress(0)
     evilBoot.reset()
+    setCredits(100)
     setIsBooting(true)
   }
 
@@ -334,6 +338,7 @@ function App() {
     onMoveFolder={moveDesktopFolder} onOpenDocument={openDocument} onCloseWindow={closeDesktopWindow}
     onFocusWindow={focusDesktopWindow} onMoveWindow={moveDesktopWindow}
     evilPhase={evilBoot.phase} evilProgress={evilBoot.progress} onEvilLuci={evilBoot.start}
+    credits={credits} onCreditDelta={adjustCredits}
   />
 
   return <PortfolioPage
